@@ -1,335 +1,323 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Sentence Player 2</title>
-    <style>
-        :root {
-            --primary: #ff0000;
-            --primary-hover: #cc0000;
-            --bg: #f9f9f9;
-            --card-bg: #ffffff;
-            --text: #333333;
-            --border: #e0e0e0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .container {
-            max-width: 800px;
-            width: 100%;
-            background: var(--card-bg);
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-
-        h1 {
-            margin-top: 0;
-            text-align: center;
-            font-size: 24px;
-        }
-
-        .video-input-section {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        button {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: background 0.2s;
-        }
-
-        button:hover {
-            background-color: var(--primary-hover);
-        }
-
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-        .video-container {
-            position: relative;
-            width: 100%;
-            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-            height: 0;
-            margin-bottom: 20px;
-            background: #000;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .video-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .controls button {
-            min-width: 100px;
-        }
-
-        .sentence-list {
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            max-height: 250px;
-            overflow-y: auto;
-        }
-
-        .sentence-item {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-            transition: background 0.2s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .sentence-item:last-child {
-            border-bottom: none;
-        }
-
-        .sentence-item:hover {
-            background-color: #f0f0f0;
-        }
-
-        .sentence-item.active {
-            background-color: #ffe5e5;
-            border-left: 4px solid var(--primary);
-            font-weight: bold;
-        }
-
-        .timestamp {
-            font-size: 12px;
-            color: #666;
-            background: #eee;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mobile Subtitle Viewer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Smooth scrolling for automatic subtitle tracking */
+    #subsContainer { scroll-behavior: smooth; }
+    /* Compact custom scrollbars */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 2px; }
+  </style>
 </head>
-<body>
+<body class="bg-gray-900 text-gray-100 h-screen w-screen flex flex-col overflow-hidden font-sans antialiased select-none">
 
-<div class="container">
-    <h1>YouTube Sentence Player</h1>
-    
-    <!-- Video Loader Section -->
-    <div class="video-input-section">
-        <input type="text" id="video-id-input" value="dQw4w9WgXcQ" placeholder="Enter YouTube Video ID (e.g., dQw4w9WgXcQ)">
-        <button onclick="loadCustomVideo()">Load Video</button>
+  <header class="bg-gray-800 px-3 py-2 flex items-center justify-between border-b border-gray-700 shadow-md shrink-0">
+    <div class="flex items-center space-x-2 w-full">
+      <select id="videoSelect" class="w-full bg-gray-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 appearance-none font-medium truncate">
+        <option value="">Loading videos.json...</option>
+      </select>
     </div>
+  </header>
 
-    <!-- YouTube Player Iframe Target -->
-    <div class="video-container">
-        <div id="player"></div>
+  <section class="w-full bg-black shrink-0 shadow-lg border-b border-gray-800">
+    <div class="w-full aspect-video max-h-[30vh] bg-gray-950 relative mx-auto">
+      <div id="player" class="w-full h-full"></div>
     </div>
+  </section>
 
-    <!-- Custom UI Controls -->
-    <div class="controls">
-        <button id="prev-btn" onclick="previousSentence()">⏮ Previous</button>
-        <button id="play-btn" onclick="togglePlay()">Play</button>
-        <button id="next-btn" onclick="nextSentence()">Next ⏭</button>
+  <section class="flex-1 bg-gray-950 overflow-hidden flex flex-col">
+    <div id="subsContainer" class="flex-1 overflow-y-auto px-3 py-3 space-y-1.5 select-text">
+      <div class="text-gray-500 text-center mt-12 text-xs px-4">
+        Tap the dropdown above to choose a video and load its subtitles.
+      </div>
     </div>
+  </section>
 
-    <!-- Sentences / Subtitles List -->
-    <div class="sentence-list" id="sentence-list">
-        <!-- Generated dynamically by JS -->
+  <footer class="bg-gray-800 border-t border-gray-700 px-2 py-2.5 shrink-0 shadow-2xl">
+    <div class="grid grid-cols-4 gap-2 max-w-md mx-auto">
+      <button id="btnPrev" onclick="navigateSentence(-1)" class="flex flex-col items-center justify-center bg-gray-700 active:bg-gray-600 border border-gray-600 rounded py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-300 transition duration-100">
+        <span class="text-base mb-0.5">⏮️</span> Prev
+      </button>
+      <button id="btnPlayPause" onclick="togglePlayPause()" class="flex flex-col items-center justify-center bg-blue-600 active:bg-blue-500 border border-blue-500 rounded py-1.5 text-[10px] font-bold uppercase tracking-wider text-white transition duration-100 shadow-md shadow-blue-500/10">
+        <span id="playPauseIcon" class="text-base mb-0.5">▶️</span> <span id="playPauseText">Play</span>
+      </button>
+      <button id="btnReplay" onclick="replayCurrentSentence()" class="flex flex-col items-center justify-center bg-amber-600 active:bg-amber-500 border border-amber-500 rounded py-1.5 text-[10px] font-bold uppercase tracking-wider text-white transition duration-100 shadow-md shadow-amber-500/10">
+        <span class="text-base mb-0.5">🔂</span> Replay
+      </button>
+      <button id="btnNext" onclick="navigateSentence(1)" class="flex flex-col items-center justify-center bg-gray-700 active:bg-gray-600 border border-gray-600 rounded py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-300 transition duration-100">
+        <span class="text-base mb-0.5">⏭️</span> Next
+      </button>
     </div>
-</div>
+  </footer>
 
-<script>
-    // 1. Define dummy sentences with timestamps (in seconds)
-    // Replace these text structures or load them dynamically based on your chosen video.
-    const sentences = [
-        { start: 0, end: 3, text: "Welcome to the video introduction." },
-        { start: 3, end: 7, text: "We are learning how to control YouTube with code." },
-        { start: 7, end: 12, text: "This is the third sentence block of the demonstration." },
-        { start: 12, end: 18, text: "You can easily click any of these lines to skip to it." },
-        { start: 18, end: 25, text: "The app will automatically highlight the current playing sentence." },
-        { start: 25, end: 35, text: "Thank you for watching this example application!" }
-    ];
+  <script src="https://www.youtube.com/iframe_api"></script>
 
+  <script>
     let player;
-    let currentSentenceIndex = 0;
-    let updateInterval;
+    let currentVideoId = "";
+    let subtitleData = [];
+    let highlightInterval;
+    let lastActiveIndex = -1;
+    let stopAtTime = null; // Used by the replay-and-stop logic
 
-    // 2. Load the YouTube IFrame Player API asynchronously
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    document.addEventListener("DOMContentLoaded", loadVideoConfig);
 
-    // 3. This function creates an <iframe> (and YouTube player) after the API code downloads.
+    function loadVideoConfig() {
+      fetch('videos.json')
+        .then(res => {
+          if(!res.ok) throw new Error("Could not fetch videos.json");
+          return res.json();
+        })
+        .then(videos => {
+          const select = document.getElementById('videoSelect');
+          select.innerHTML = '<option value="">📱 Choose a Video...</option>';
+          
+          videos.forEach(video => {
+            const opt = document.createElement('option');
+            opt.value = video.id;
+            opt.textContent = video.title;
+            select.appendChild(opt);
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('videoSelect').innerHTML = '<option value="">⚠️ videos.json error</option>';
+        });
+    }
+
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
-            videoId: document.getElementById('video-id-input').value,
-            playerVars: {
-                'playsinline': 1,
-                'controls': 1 // Show native controls too, or set to 0 to rely purely on custom UI
-            },
-            events: {
-                'onReady': onPlayerReady,
-                'onStateChange': onPlayerStateChange
-            }
-        });
+      player = new YT.Player('player', {
+        height: '100%',
+        width: '100%',
+        videoId: '', 
+        playerVars: { 
+          'playsinline': 1, 
+          'rel': 0,
+          'modestbranding': 1,
+          'controls': 1
+        },
+        events: {
+          'onStateChange': onPlayerStateChange
+        }
+      });
     }
 
-    function onPlayerReady(event) {
-        renderSentences();
-        startTracking();
-    }
-
-    // 4. Respond to player state changes (like when a user clicks play/pause inside the video itself)
     function onPlayerStateChange(event) {
-        const playBtn = document.getElementById('play-btn');
-        if (event.data == YT.PlayerState.PLAYING) {
-            playBtn.innerText = "Pause";
-            startTracking();
-        } else {
-            playBtn.innerText = "Play";
-            clearInterval(updateInterval);
-        }
+      const icon = document.getElementById('playPauseIcon');
+      const text = document.getElementById('playPauseText');
+
+      if (event.data === YT.PlayerState.PLAYING) {
+        icon.textContent = "⏸️";
+        text.textContent = "Pause";
+        clearInterval(highlightInterval);
+        highlightInterval = setInterval(updateLiveHighlight, 100); 
+      } else {
+        icon.textContent = "▶️";
+        text.textContent = "Play";
+        clearInterval(highlightInterval);
+      }
     }
 
-    // 5. Build the UI list of sentences
-    function renderSentences() {
-        const listContainer = document.getElementById('sentence-list');
-        listContainer.innerHTML = '';
+    // Strict window matching logic
+    function updateLiveHighlight() {
+      if (!player || typeof player.getCurrentTime !== 'function' || subtitleData.length === 0) return;
+      
+      const currentTime = player.getCurrentTime();
 
-        sentences.forEach((sentence, index) => {
-            const div = document.createElement('div');
-            div.className = `sentence-item ${index === currentSentenceIndex ? 'active' : ''}`;
-            div.id = `sentence-${index}`;
-            div.onclick = () => jumpToSentence(index);
+      // Check if we reached a designated Replay hard-stop threshold
+      if (stopAtTime !== null && currentTime >= stopAtTime) {
+        player.pauseVideo();
+        stopAtTime = null; 
+        return;
+      }
 
-            const textSpan = document.createElement('span');
-            textSpan.innerText = sentence.text;
+      let activeIndex = -1;
+      for (let i = 0; i < subtitleData.length; i++) {
+        if (currentTime >= subtitleData[i].startSeconds && currentTime <= subtitleData[i].endSeconds) {
+          activeIndex = i;
+          break; 
+        }
+      }
 
-            const timeSpan = document.createElement('span');
-            timeSpan.className = 'timestamp';
-            timeSpan.innerText = formatTime(sentence.start);
+      if (activeIndex !== lastActiveIndex) {
+        
+        // 1. COMPLETELY RESET ALL ROWS
+        subtitleData.forEach((_, index) => {
+          const row = document.getElementById(`sub-row-${index}`);
+          if (row) {
+            row.className = "block bg-gray-900 border border-gray-800 rounded p-2 min-h-[38px]";
+          }
+        });
 
-            div.appendChild(textSpan);
-            div.appendChild(timeSpan);
-            listContainer.appendChild(div);
+        // 2. APPLY HIGHLIGHT ONLY TO THE ACTIVE ROW
+        if (activeIndex !== -1) {
+          const newRow = document.getElementById(`sub-row-${activeIndex}`);
+          if (newRow) {
+            newRow.className = "block bg-blue-950/40 border-2 border-blue-500 rounded p-2 min-h-[38px] shadow-md shadow-blue-500/10";
+            newRow.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          }
+        }
+        
+        lastActiveIndex = activeIndex;
+      }
+    }
+
+    document.getElementById('videoSelect').addEventListener('change', function(e) {
+      currentVideoId = e.target.value;
+      if (!currentVideoId) return;
+
+      lastActiveIndex = -1;
+      stopAtTime = null; 
+      if (player && typeof player.cueVideoById === 'function') {
+        player.cueVideoById({ videoId: currentVideoId });
+      }
+
+      fetchSubtitles(`${currentVideoId}.srt`);
+    });
+
+    function fetchSubtitles(filename) {
+      const container = document.getElementById('subsContainer');
+      container.innerHTML = `<div class="text-gray-400 text-center mt-12 text-xs animate-pulse">Loading ${filename}...</div>`;
+
+      fetch(filename)
+        .then(res => {
+          if(!res.ok) throw new Error();
+          return res.text();
+        })
+        .then(srtText => parseSubtitles(srtText))
+        .catch(() => {
+          subtitleData = [];
+          container.innerHTML = `<div class="text-red-400 text-center mt-12 text-xs px-4">❌ Missing File:<br><span class="font-mono text-gray-300 block mt-1">${filename}</span> must be saved in the same app folder.</div>`;
         });
     }
 
-    // 6. Action Functions for Custom UI Controls
-    function togglePlay() {
-        const state = player.getPlayerState();
-        if (state == YT.PlayerState.PLAYING) {
-            player.pauseVideo();
-        } else {
-            player.playVideo();
+    function parseSubtitles(rawText) {
+      subtitleData = [];
+      const blocks = rawText.replace(/\r\n/g, '\n').split('\n\n');
+      
+      blocks.forEach((block) => {
+        const lines = block.trim().split('\n');
+        if (lines.length >= 3) {
+          const id = lines[0];
+          const timestampLine = lines[1];
+          const text = lines.slice(2).join(' ');
+
+          const timeMatch = timestampLine.match(/(\d+:\d+:\d+[\.,]\d+)\s+-->\s+(\d+:\d+:\d+[\.,]\d+)/);
+          if (timeMatch) {
+            subtitleData.push({
+              id: id,
+              startSeconds: timeToSeconds(timeMatch[1]), 
+              endSeconds: timeToSeconds(timeMatch[2]),   
+              text: text
+            });
+          }
         }
+      });
+      
+      renderSubtitles();
     }
 
-    function jumpToSentence(index) {
-        if (index >= 0 && index < sentences.length) {
-            currentSentenceIndex = index;
-            player.seekTo(sentences[index].start, true);
-            player.playVideo();
-            highlightCurrentSentence();
-        }
+    function timeToSeconds(timeStr) {
+      const parts = timeStr.replace(',', '.').split(':');
+      return (parseFloat(parts[0]) * 3600) + (parseFloat(parts[1]) * 60) + parseFloat(parts[2]);
     }
 
-    function nextSentence() {
-        if (currentSentenceIndex < sentences.length - 1) {
-            jumpToSentence(currentSentenceIndex + 1);
-        }
-    }
+    function renderSubtitles() {
+      const container = document.getElementById('subsContainer');
+      container.innerHTML = '';
 
-    function previousSentence() {
-        if (currentSentenceIndex > 0) {
-            jumpToSentence(currentSentenceIndex - 1);
-        }
-    }
+      if (subtitleData.length === 0) {
+        container.innerHTML = '<div class="text-gray-500 text-center mt-12 text-xs">Subtitle template structure is empty.</div>';
+        return;
+      }
 
-    // 7. Track playback time to update UI highlights automatically
-    function startTracking() {
-        clearInterval(updateInterval);
-        updateInterval = setInterval(() => {
-            if (player && player.getCurrentTime) {
-                const currentTime = player.getCurrentTime();
-                
-                // Find matching sentence based on current video time
-                const matchingIndex = sentences.findIndex(s => currentTime >= s.start && currentTime < s.end);
-                
-                if (matchingIndex !== -1 && matchingIndex !== currentSentenceIndex) {
-                    currentSentenceIndex = matchingIndex;
-                    highlightCurrentSentence();
-                }
-            }
-        }, 200); // Check every 200ms for smooth transitions
-    }
-
-    function highlightCurrentSentence() {
-        // Remove active class from all items
-        document.querySelectorAll('.sentence-item').forEach(el => el.classList.remove('active'));
+      subtitleData.forEach((sub, index) => {
+        const row = document.createElement('div');
+        row.id = `sub-row-${index}`;
+        row.className = "block bg-gray-900 border border-gray-800 rounded p-2 min-h-[38px] transition duration-150";
         
-        // Add active class to current item
-        const activeEl = document.getElementById(`sentence-${currentSentenceIndex}`);
-        if (activeEl) {
-            activeEl.classList.add('active');
-            activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        row.onclick = () => {
+          stopAtTime = null; 
+          lastActiveIndex = -1; 
+          seekTo(sub.startSeconds);
+        };
+        
+        row.innerHTML = `
+          <div class="text-gray-200 text-xs break-words leading-relaxed font-medium">
+            ${escapeHtml(sub.text)}
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function seekTo(seconds) {
+      if (player && typeof player.seekTo === 'function') {
+        player.seekTo(seconds, true);
+        player.playVideo();
+      }
+    }
+
+    /* --- Media Control Interactions Functions --- */
+
+    function togglePlayPause() {
+      if (!player || typeof player.getPlayerState !== 'function') return;
+      const state = player.getPlayerState();
+      if (state === YT.PlayerState.PLAYING) {
+        player.pauseVideo();
+      } else {
+        stopAtTime = null; 
+        player.playVideo();
+      }
+    }
+
+    function navigateSentence(direction) {
+      if (subtitleData.length === 0 || !player) return;
+      stopAtTime = null; 
+
+      let targetIndex = 0;
+      
+      if (lastActiveIndex !== -1) {
+        targetIndex = lastActiveIndex + direction;
+      } else {
+        const currentTime = player.getCurrentTime();
+        if (direction > 0) {
+          targetIndex = subtitleData.findIndex(sub => sub.startSeconds > currentTime);
+          if (targetIndex === -1) targetIndex = subtitleData.length - 1;
+        } else {
+          for (let i = subtitleData.length - 1; i >= 0; i--) {
+            if (subtitleData[i].startSeconds < currentTime) {
+              targetIndex = i;
+              break;
+            }
+          }
         }
+      }
+
+      if (targetIndex < 0) targetIndex = 0;
+      if (targetIndex >= subtitleData.length) targetIndex = subtitleData.length - 1;
+
+      lastActiveIndex = -1; 
+      seekTo(subtitleData[targetIndex].startSeconds);
     }
 
-    // 8. Dynamic Video Loader
-    function loadCustomVideo() {
-        const newId = document.getElementById('video-id-input').value.trim();
-        if (newId && player && player.loadVideoById) {
-            player.loadVideoById(newId);
-            currentSentenceIndex = 0;
-            highlightCurrentSentence();
-        }
+    function replayCurrentSentence() {
+      if (subtitleData.length === 0 || !player || lastActiveIndex === -1) return;
+      
+      const currentSentence = subtitleData[lastActiveIndex];
+      stopAtTime = currentSentence.endSeconds;
+      
+      lastActiveIndex = -1; 
+      seekTo(currentSentence.startSeconds);
     }
-
-    // Helper: Format seconds to MM:SS
-    function formatTime(seconds) {
-        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const s = Math.floor(seconds % 60).toString().padStart(2, '0');
-        return `${m}:${s}`;
-    }
-</script>
-
+  </script>
 </body>
 </html>
